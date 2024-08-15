@@ -1,0 +1,39 @@
+name: raspberry-cicd
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  RASPBERRY_IP: ${{ secrets.RASPBERRY_IP }}
+  RASPBERRY_USERNAME: ${{ secrets.RASPBERRY_USERNAME }}
+  RASPBERRY_SSH_KEY: ${{ secrets.RASPBERRY_SSH_KEY }}
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and push docker image
+        run: |
+          echo ${{ env.DOCKER_PASSWORD }} | docker login -u ${{ env.DOCKER_USERNAME }} --password-stdin
+          docker build -t ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}} .
+          docker push ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
+
+      - name: Deploy to Raspberry Pi
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.RASPBERRY_IP }}
+          username: ${{ env.RASPBERRY_USERNAME }}
+          key: ${{ env.RASPBERRY_SSH_KEY }}
+          script: |
+            docker pull ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
+            docker stop youtacoin || true
+            docker rm youtacoin || true
+            docker run -d --name youtacoin -p 3000:3000 ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
