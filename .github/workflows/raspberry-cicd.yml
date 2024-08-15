@@ -33,8 +33,8 @@ jobs:
           username: ${{ env.RASPBERRY_USERNAME }}
           key: ${{ env.RASPBERRY_SSH_KEY }}
           script: |
-            docker login -u ${{ env.DOCKER_USERNAME }} -p ${{ env.DOCKER_PASSWORD }}
-            docker pull ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
-            docker stop youtacoin || true
-            docker rm youtacoin || true
-            docker run -d --name youtacoin -p 3000:3000 ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
+            echo ${{ env.DOCKER_PASSWORD }} | sudo docker login -u ${{ env.DOCKER_USERNAME }} --password-stdin
+            sudo docker pull ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
+            sudo docker stop youtacoin || true
+            sudo docker rm youtacoin || true
+            sudo docker run -d --name youtacoin -p 3000:3000 ${{ env.DOCKER_USERNAME }}/youtacoin:${{github.sha}}
